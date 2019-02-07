@@ -1,5 +1,6 @@
 import zmq
 import os
+import time
 
 process = str(os.getpid())
 print ('PID: ' + process)
@@ -19,6 +20,7 @@ while True:
     message = socket.recv()
     print("Message from client : ", message)
     time.sleep(1)
-    socket.send("OK")
+    print("Sending for client:\nOK ")
+    socket.send_string("OK")
 
 

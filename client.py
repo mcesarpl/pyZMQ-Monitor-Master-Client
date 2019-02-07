@@ -1,4 +1,5 @@
 import zmq
+import time
 
 try:
     ctx = zmq.Context.instance()
@@ -13,6 +14,6 @@ while True:
     print('Sending request ...')
     socket.send_string('Hello')
     #Get the answer
-    message = socket.recv()
+    message = str(socket.recv())
     print('Received from server : ' + message)
-    time.sleep(200)
+    time.sleep(2)
