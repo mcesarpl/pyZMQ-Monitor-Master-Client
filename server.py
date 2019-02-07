@@ -12,3 +12,12 @@ try:
 except Exception as e:
     print('Error:'+ str(type(e)) + str(e))
     socket.close()
+
+while True:
+    #Wait for next request from client
+    message = socket.recv()
+    print("Message from client : ", message)
+    time.sleep(1)
+    socket.send("OK")
+
+
