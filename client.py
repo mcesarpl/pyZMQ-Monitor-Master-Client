@@ -1,4 +1,5 @@
 import zmq
+import threading
 import time
 from zmq.utils.monitor import recv_monitor_message
 
@@ -7,52 +8,75 @@ print("libzmq-" + zmq.zmq_version())
 if zmq.zmq_version_info() < (4, 0):
     raise RuntimeError("version not supported")
 
-EVENT_MAP = {}
-print("Event names:")
-for name in dir(zmq):
-    if name.startswith('EVENT_'):
-        value = getattr(zmq, name)
-        print("%21s : %4i" % (name, value))
-        EVENT_MAP[value] = name
+#Init Variables
+ctx = None
+socket = None
+monitor = None
 
-def try_reconnection(socket):
-    for k in range(0, 2):
-        print('Reconnection trying: {}\n...'.format(str(k)))
-        socket.connect('tcp://127.0.0.1:5555')
+# def try_reconnection():
+#     print('Try reconnection: \n...')
+#     for k in range(0, 4):
+#         connect()
+#         print('Reconnection trying: {}\n...'.format(str(k)))
+#         monitor = socket.get_monitor_socket()
+#         evt = recv_monitor_message(monitor)
+#         time.sleep(5)
+#         print("Event: {}".format(evt['event']))
+#         if evt['event'] == 1 or evt['event'] == 2:
+#             time.sleep(10)
+#             if evt['event'] == 1:
+#                 return
+#     if (evt['event'] == 128 or evt['event'] == 2):
+#         print('Reconnect was unsuccessful.')
+#         exit()
+
+def event_monitor():
+    global monitor
+    global socket
+    count = 0
+    while monitor.poll():
         evt = recv_monitor_message(monitor)
-        evt.update({'description': EVENT_MAP[evt['event']]})
-        if evt['event'] == zmq.EVENT_CONNECTED:
-            break
-        time.sleep(2)
-        
-    if  (evt['event'] == zmq.EVENT_DISCONNECTED or evt['event'] == zmq.EVENT_CONNECT_DELAYED)
-        print('Reconnect was unsuccessful.')
+        print("Event: {}".format(evt['event']))
+        if evt['event'] == 512 or evt['event'] == 128:
+            print('Trying reconnection...')
+            socket.close()
+            connect()
+        # if evt['event'] == 4:
+        #     time.sleep(5)
+        #     count+=1
+        #     print('Trying reconnection...{}'.format(count))
+        # if count>3:
+        #     print('Reconnect was Not successful.')
+        #     exit()
+                
+
+def connect():
+    print('Trying connect to Server:\n...')
+    try:
+        global ctx
+        global socket
+        global monitor
+        ctx = zmq.Context.instance() 
+        socket = ctx.socket(zmq.REQ)
+        socket.connect('tcp://127.0.0.1:5555') 
+        monitor = socket.get_monitor_socket()
+        time.sleep(10)
+    except Exception as e :
+        print('Error:' + str(type(e)) + str(e))
         exit()
 
-def event_monitor(monitor, socket):
-    evt = recv_monitor_message(monitor)
-    evt.update({'description': EVENT_MAP[evt['event']]})
-    print("Event: {}".format(evt))
-    if evt['event'] == zmq.EVENT_DISCONNECTED:
-        try_reconnection(socket)
+def main():
 
-try:
-    ctx = zmq.Context.instance()
-    socket = ctx.socket(zmq.REQ)
-    socket.connect('tcp://127.0.0.1:5555')
-    monitor = socket.get_monitor_socket()
+    while True:
+        print('Sending request ...')
+        socket.send_string('Hello')
+        #Get the answer
+        message = str(socket.recv())
+        print('Received from server : ' + message)
+        time.sleep(1)
 
-except Exception as e :
-    print('Error:' + str(type(e)) + str(e))
-    socket.close()
-
-#Doing requests to server
-while True:
-   # print('Sending request ...')
-   # socket.send_string('Hello')
-    #Get the answer
-   # message = str(socket.recv())
-   # print('Received from server : ' + message)
-    event_monitor(monitor, socket)
-    time.sleep(5)
-
+if __name__ == "__main__":
+    connect()
+    t = threading.Thread(target=event_monitor, args=())
+    t.start()
+    main()
