@@ -34,31 +34,49 @@ def connect():
     global ctx
     global socket
     global monitor
-    print('Trying connect to Server:\n...')
-    try:
-        ctx = zmq.Context.instance() 
-        socket = ctx.socket(zmq.REQ)
-        socket.connect('tcp://127.0.0.1:3000') 
-        monitor = socket.get_monitor_socket()
-    except Exception as e :
-        print('Error: ' + str(type(e)) + str(e))
+    ctx = None
+    socket = None
+    monitor = None
+    loop = True
+    while loop:
+        print('Trying connect to Server:\n...')
+        try:
+            loop = False
+            ctx = zmq.Context.instance() 
+            socket = ctx.socket(zmq.DEALER)
+            socket.connect('tcp://127.0.0.1:3000') 
+            monitor = socket.get_monitor_socket()
+        except Exception as e :
+            if str(e) == 'Address already in use':
+                loop = True
+                print('looping...')
+            else:
+                print('Error: ' + str(type(e)) + str(e))
 
 def main():
     while True:
         for k in range(10):
             message = None
+            loop = True
             if event == 1:
                 print('Sending request ...')
-                try:
-                    socket.send_string(str(k), flags=zmq.NOBLOCK)
-                except Exception as e:
-                    if str(e) != 'Operation cannot be accomplished in current state':
-                        print('Error:' + str(type(e)) + str(e))
+                while loop:
+                    try:
+                        loop = False
+                        socket.send_string(str(k), flags=zmq.NOBLOCK, copy=True)
+                    except Exception as e:
+                        if str(e) == 'Operation cannot be accomplished in current state':
+                            loop = True
+                            print('Operation cannot be accomplished in current state\nlooping...')
+                        else:
+                            print('Error:' + str(type(e)) + str(e))
+                    time.sleep(1)
+                #Get the answer
                 try:
                     message = str(socket.recv(flags=zmq.NOBLOCK))
                 except Exception as e:
-                    if type(e) != zmq.error.Again:
-                        print('Error:' + str(type(e)) + str(e))
+                    #if type(e) != zmq.error.Again:
+                    print('Error:' + str(type(e)) + str(e))
                 if message != None:
                     print('Received from server : ' + message)
             time.sleep(1)
