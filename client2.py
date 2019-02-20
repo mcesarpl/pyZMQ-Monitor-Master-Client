@@ -29,7 +29,7 @@ def event_monitor():
         exit()
     if evt['event'] == 512 or evt['event'] == 128:
         print('Server got offline...\n')
-        for k in range(10):
+        for k in range(3):
             socket.close()
             print('Trying to Reconnect:...{}\n'.format(str(k)))
             connect()
@@ -69,19 +69,18 @@ def main():
     while True:
         count = 0
         event_monitor()
-        if event == 1:
-            print('Waiting a message ...')
-            #Get a message
-            try:
-                message = str(socket.recv(flags=zmq.NOBLOCK))
-            except Exception as e:
-                if type(e) == zmq.error.Again:
-                    message = None
-                else:
-                    print('Error:' + str(type(e)) + str(e))
-            if message != None:
-                loop = True
-                print('Received from server : ' + message)
+        print('Waiting a message ...')
+        #Get a message
+        try:
+            message = str(socket.recv(flags=zmq.NOBLOCK))
+        except Exception as e:
+            if type(e) == zmq.error.Again:
+                message = None
+            else:
+                print('Error:' + str(type(e)) + str(e))
+        if message != None:
+            loop = True
+            print('Received from server : ' + message)
             #Send a answer
             while (loop and (count<3)):
                 try:
@@ -95,7 +94,7 @@ def main():
                     else:
                         loop = False
                         print('Error:' + str(type(e)) + str(e))
-            time.sleep(1)
+        time.sleep(1)
 
 if __name__ == "__main__":
     #Start Conection
