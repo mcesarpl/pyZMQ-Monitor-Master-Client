@@ -2,6 +2,8 @@ import zmq
 import os
 import time
 
+#Send Receve Server
+
 process = str(os.getpid())
 print ('PID: ' + process)
 
@@ -9,7 +11,7 @@ try:
     ctx = zmq.Context.instance()
     #socket = ctx.socket(zmq.REP)
     socket = ctx.socket(zmq.DEALER)
-    socket.bind('tcp://127.0.0.1:3000')
+    socket.bind('tcp://127.0.0.1:4000')
     print('Server listening on : 127.0.0.1:3000\n...')
 
 except Exception as e:

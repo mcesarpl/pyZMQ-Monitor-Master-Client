@@ -10,12 +10,13 @@ if zmq.zmq_version_info() < (4, 0):
 #Init Global Variables
 socket = None
 event = None
+monitor = None
 
 def event_monitor():
     global socket
     global event
+    global monitor
     evt = {'event': 0}
-    monitor = socket.get_monitor_socket()
     try:
         evt = recv_monitor_message(monitor, flags=zmq.NOBLOCK)
         event = evt['event']
@@ -29,7 +30,7 @@ def event_monitor():
         exit()
     if evt['event'] == 512 or evt['event'] == 128:
         print('Server got offline...\n')
-        for k in range(3):
+        for k in range(10):
             socket.close()
             print('Trying to Reconnect:...{}\n'.format(str(k)))
             connect()
@@ -40,7 +41,6 @@ def event_monitor():
             time.sleep(2)
             print('Event:' + str(evt['event']))
             if evt['event'] == 1 or evt['event'] == 2:
-                evt = recv_monitor_message(monitor)
                 print('Event IF:' + str(evt['event']))
                 if evt['event'] == 1:
                     print('Reconnected...\n')
@@ -54,13 +54,16 @@ def event_monitor():
 
 def connect():
     global socket
+    global monitor
     socket = None
     try:
         ctx = zmq.Context.instance()
         socket = ctx.socket(zmq.DEALER)
-        socket.connect('tcp://127.0.0.1:3000')
+        socket.connect('tcp://127.0.0.1:4000')
+        monitor = socket.get_monitor_socket()
     except Exception as e :
-        print('Error:' + str(type(e)) + str(e))
+        if str(e)!='Address already in use':
+            print('Error:' + str(type(e)) + str(e))
 
 def main():
     global event

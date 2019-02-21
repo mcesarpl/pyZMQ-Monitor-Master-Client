@@ -44,7 +44,7 @@ def connect():
             loop = False
             ctx = zmq.Context.instance() 
             socket = ctx.socket(zmq.DEALER)
-            socket.connect('tcp://127.0.0.1:3000') 
+            socket.connect('tcp://127.0.0.1:4000')
             monitor = socket.get_monitor_socket()
         except Exception as e :
             if str(e) == 'Address already in use':
@@ -75,8 +75,8 @@ def main():
                 try:
                     message = str(socket.recv(flags=zmq.NOBLOCK))
                 except Exception as e:
-                    #if type(e) != zmq.error.Again:
-                    print('Error:' + str(type(e)) + str(e))
+                    if type(e) != zmq.error.Again:
+                        print('Error:' + str(type(e)) + str(e))
                 if message != None:
                     print('Received from server : ' + message)
             time.sleep(1)
